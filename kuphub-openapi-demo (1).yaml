@@ -1,0 +1,435 @@
+openapi: 3.0.3
+info:
+  title: KuP API - Vendor Demo Specification
+  version: 1.0.0
+  description: |
+    Standardisierte Schnittstellenspezifikation für KuP zur Vorbereitung
+    und Durchführung der technischen Live-Demonstration im Rahmen des RfP-Prozesses.
+servers:
+  - url: https://api.demo.example.org/api/v1
+    description: Vendor Demo / Sandbox Environment
+
+paths:
+  /customers:
+    post:
+      summary: Kunden anlegen oder aktualisieren
+      description: Überträgt ein Kundenobjekt aus einem Quellsystem (z. B. CRM/Salesforce) zur Validierung und Weiterleitung an den KuP.
+      operationId: createOrUpdateCustomer
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            example: application/json
+        - name: Accept
+          in: header
+          required: false
+          schema:
+            type: string
+            example: application/json
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerRequest'
+            example:
+              externalId: "SF-100045"
+              customerType: "COMPANY"
+              name: "Beispiel GmbH"
+              email: "kontakt@beispiel.de"
+              address:
+                street: "Musterstraße 1"
+                postalCode: "80331"
+                city: "München"
+                country: "DE"
+      responses:
+        '200':
+          description: Kunde erfolgreich verarbeitet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSuccessResponse'
+              example:
+                status: 200
+                message: "Customer successfully accepted for processing"
+                customerId: "KUP-2000123"
+        '202':
+          description: Anfrage angenommen, asynchrone Verarbeitung gestartet
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerSuccessResponse'
+        '400':
+          description: Validierungsfehler oder fehlerhafter Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: 400
+                errorCode: "VALIDATION_FAILED"
+                message: "Ungültige Eingabedaten"
+                details:
+                  - "name: darf nicht leer sein"
+                timestamp: "2026-09-25T14:30:00Z"
+                path: "/api/v1/customers"
+        '401':
+          description: Fehlende oder ungültige Authentifizierung
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: 401
+                errorCode: "AUTH_MISSING_BEARER"
+                message: "Fehlender Bearer-Token bei geschütztem Request"
+                timestamp: "2026-09-25T14:30:00Z"
+                path: "/api/v1/customers"
+        '406':
+          description: Nicht unterstützter Accept-Header
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '415':
+          description: Nicht unterstützter Content-Type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Interner Systemfehler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /customers/{customerId}:
+    get:
+      summary: Kundendaten abrufen
+      description: Liefert die Stammdaten und den Status eines Kunden anhand der Kundennummer/ID.
+      operationId: getCustomerById
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: customerId
+          in: path
+          required: true
+          description: Technische oder fachliche ID des Kunden (z. B. KUP-2000123)
+          schema:
+            type: string
+            example: "KUP-2000123"
+        - name: Accept
+          in: header
+          required: false
+          schema:
+            type: string
+            example: application/json
+      responses:
+        '200':
+          description: Kundendaten erfolgreich ermittelt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerDetailResponse'
+              example:
+                customerId: "KUP-2000123"
+                externalId: "SF-100045"
+                customerType: "COMPANY"
+                name: "Beispiel GmbH"
+                status: "ACTIVE"
+        '401':
+          description: Nicht autorisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Kunde nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+              example:
+                status: 404
+                errorCode: "RESOURCE_NOT_FOUND"
+                message: "Kunde KUP-2000123 wurde nicht gefunden"
+                timestamp: "2026-09-25T14:30:00Z"
+                path: "/api/v1/customers/KUP-2000123"
+        '500':
+          description: Interner Systemfehler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /contracts:
+    post:
+      summary: Vertragsdaten übermitteln
+      description: Überträgt Vertrags- und Abonnementinformationen für einen bestehenden Kunden an nachgelagerte Systeme.
+      operationId: createContract
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            example: application/json
+        - name: Accept
+          in: header
+          required: false
+          schema:
+            type: string
+            example: application/json
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ContractRequest'
+            example:
+              contractId: "C-90001"
+              customerId: "KUP-2000123"
+              productCode: "PROD-XL"
+              startDate: "2026-07-14"
+              status: "ACTIVE"
+      responses:
+        '200':
+          description: Vertrag erfolgreich angelegt / übermittelt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              example:
+                status: 200
+                message: "Vertrag C-90001 erfolgreich verarbeitet"
+        '400':
+          description: Validierungsfehler (z. B. ungültiges Datumsformat oder fehlender Kunde)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '401':
+          description: Nicht authentifiziert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '404':
+          description: Referenzierter Kunde oder Produkt nicht gefunden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+        '500':
+          description: Interner Systemfehler
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
+  /health:
+    get:
+      summary: Technischer Healthcheck
+      description: Prüft die Erreichbarkeit und Betriebsbereitschaft des Dienstes.
+      operationId: getHealth
+      responses:
+        '200':
+          description: Dienst ist betriebsbereit
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "UP"
+                  service:
+                    type: string
+                    example: "integration-hub"
+              example:
+                status: "UP"
+                service: "integration-hub"
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Authentifizierung über RFC-konformes OAuth 2.0 Bearer-Token.
+
+  schemas:
+    Address:
+      type: object
+      required:
+        - street
+        - postalCode
+        - city
+        - country
+      properties:
+        street:
+          type: string
+          example: "Musterstraße 1"
+        postalCode:
+          type: string
+          example: "80331"
+        city:
+          type: string
+          example: "München"
+        country:
+          type: string
+          description: ISO-3166-1 Alpha-2 Ländercode
+          example: "DE"
+
+    CustomerRequest:
+      type: object
+      required:
+        - externalId
+        - customerType
+        - name
+      properties:
+        externalId:
+          type: string
+          description: Eindeutige ID des Kunden im Quellsystem
+          example: "SF-100045"
+        customerType:
+          type: string
+          enum: [COMPANY, PRIVATE]
+          example: "COMPANY"
+        name:
+          type: string
+          description: Firmenname oder vollständiger Name der Person
+          example: "Beispiel GmbH"
+        email:
+          type: string
+          format: email
+          example: "kontakt@beispiel.de"
+        address:
+          $ref: '#/components/schemas/Address'
+
+    CustomerSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+        customerId:
+          type: string
+          description: Vergebene eindeutige Kennung im Hub/Zielsystem
+          example: "KUP-2000123"
+        message:
+          type: string
+          example: "Customer successfully accepted for processing"
+
+    CustomerDetailResponse:
+      type: object
+      properties:
+        customerId:
+          type: string
+          example: "KUP-2000123"
+        externalId:
+          type: string
+          example: "SF-100045"
+        customerType:
+          type: string
+          example: "COMPANY"
+        name:
+          type: string
+          example: "Beispiel GmbH"
+        status:
+          type: string
+          example: "ACTIVE"
+
+    ContractRequest:
+      type: object
+      required:
+        - contractId
+        - customerId
+        - productCode
+        - startDate
+      properties:
+        contractId:
+          type: string
+          description: Fachliche Vertragsnummer
+          example: "C-90001"
+        customerId:
+          type: string
+          description: Referenz auf die Kunden-ID
+          example: "KUP-2000123"
+        productCode:
+          type: string
+          description: Referenz auf das Produkt / Artikel
+          example: "PROD-XL"
+        startDate:
+          type: string
+          format: date
+          description: Vertragsbeginn im ISO-8601 Format (YYYY-MM-DD)
+          example: "2026-07-14"
+        status:
+          type: string
+          enum: [ACTIVE, PENDING, TERMINATED]
+          example: "ACTIVE"
+
+    ApiResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: "Operation erfolgreich durchgeführt"
+        payload:
+          type: object
+          nullable: true
+
+    ApiErrorResponse:
+      type: object
+      required:
+        - status
+        - errorCode
+        - message
+        - timestamp
+      properties:
+        status:
+          type: integer
+          description: HTTP Statuscode
+          example: 400
+        errorCode:
+          type: string
+          description: Standardisierter Fehlercode
+          enum:
+            - VALIDATION_FAILED
+            - REQUEST_ERROR
+            - AUTH_INVALID_CREDENTIALS
+            - AUTH_MISSING_BEARER
+            - NOT_ACCEPTABLE
+            - RESOURCE_NOT_FOUND
+            - PRODUCT_NOT_FOUND
+            - UNSUPPORTED_MEDIA_TYPE
+            - PATCH_CONTENT_TYPE
+            - INTERNAL_ERROR
+          example: "VALIDATION_FAILED"
+        message:
+          type: string
+          description: Lesbare Fehlerbeschreibung
+          example: "Ungültige Eingabedaten"
+        details:
+          type: array
+          items:
+            type: string
+          example: ["name: darf nicht leer sein"]
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-09-25T14:30:00Z"
+        path:
+          type: string
+          example: "/api/v1/customers"
