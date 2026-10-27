@@ -6,7 +6,7 @@ info:
     Standardisierte Schnittstellenspezifikation für KuP zur Vorbereitung
     und Durchführung der technischen Live-Demonstration im Rahmen des RfP-Prozesses.
 servers:
-  - url: https://api.demo.example.org/api/v1
+  - url: http://boomialexanderbode.api.mashery.com/ws/rest/kupdbbackend/v1
     description: Vendor Demo / Sandbox Environment
 
 paths:
