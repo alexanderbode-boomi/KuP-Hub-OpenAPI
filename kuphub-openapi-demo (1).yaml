@@ -7,7 +7,7 @@ info:
     und Durchführung der technischen Live-Demonstration im Rahmen des RfP-Prozesses.
 servers:
   - url: http://boomialexanderbode.api.mashery.com/ws/rest/kupdbbackend/v1
-    description: Vendor Demo / Sandbox Environment
+    description: KuP DB Backend API on Boomi Cloud API Management (Mashery)
 
 paths:
   /customers:
@@ -142,6 +142,12 @@ paths:
                 customerType: "COMPANY"
                 name: "Beispiel GmbH"
                 status: "ACTIVE"
+                email: "kontakt@beispiel.de"
+                address:
+                  street: "Musterstraße 1"
+                  postalCode: "80331"
+                  city: "München"
+                  country: "DE"
         '401':
           description: Nicht autorisiert
           content:
@@ -263,7 +269,7 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: Authentifizierung über RFC-konformes OAuth 2.0 Bearer-Token.
+      description: Authentifizierung über RFC-konformes OAuth 2.0 Bearer-Token. Token (Client Credentials) von https://boomialexanderbode.api.mashery.com/kuphub_token.
 
   schemas:
     Address:
@@ -346,6 +352,12 @@ components:
         status:
           type: string
           example: "ACTIVE"
+        email:
+          type: string
+          format: email
+          example: "kontakt@beispiel.de"
+        address:
+          $ref: '#/components/schemas/Address'
 
     ContractRequest:
       type: object
